@@ -9,7 +9,7 @@ def search_pubmed(query: str, max_results: int = 100) -> List[str]:
     """Search PubMed and return article IDs matching the query"""
     base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     params = {
-        "db": "pubmed",
+        "db": "pmc",
         "term": query,
         "retmax": max_results,
         "retmode": "json"
@@ -25,7 +25,7 @@ def fetch_article_details(pubmed_id: str) -> Dict:
     """Fetch detailed information for a single PubMed article"""
     base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {
-        "db": "pubmed",
+        "db": "pmc",
         "id": pubmed_id,
         "retmode": "xml"
     }
@@ -33,22 +33,31 @@ def fetch_article_details(pubmed_id: str) -> Dict:
     response = requests.get(base_url, params=params)
     response.raise_for_status()
     
+    # Parse PMC XML
     root = ET.fromstring(response.content)
-    article = root.find(".//PubmedArticle")
+    article = root.find(".//article")
     
     if article is None:
         return None
         
-    title = article.find(".//ArticleTitle").text if article.find(".//ArticleTitle") is not None else ""
-    abstract = article.find(".//AbstractText").text if article.find(".//AbstractText") is not None else ""
-    authors = [author.find(".//LastName").text + " " + author.find(".//ForeName").text 
-               for author in article.findall(".//Author") 
-               if author.find(".//LastName") is not None and author.find(".//ForeName") is not None]
+    title = article.find(".//article-title").text if article.find(".//article-title") is not None else ""
     
+    # Extract full text sections
+    body = article.find(".//body")
+    full_text = ""
+    if body is not None:
+        full_text = " ".join([elem.text for elem in body.iter() if elem.text])
+    
+    authors = [
+        (author.find(".//surname").text + " " + author.find(".//given-names").text).strip()
+        for author in article.findall(".//contrib[@contrib-type='author']")
+        if author.find(".//surname") is not None and author.find(".//given-names") is not None
+    ]
+    print(full_text)
     return {
-        "pubmed_id": pubmed_id,
+        "pmcid": pubmed_id,
         "title": title,
-        "abstract": abstract,
+        "full_text": full_text,
         "authors": authors
     }
 
@@ -60,8 +69,8 @@ def save_articles(articles: List[Dict], filename: str):
 def main():
     # Search for articles about genetic variants and rare diseases
     query = "(genetic variant) AND (rare disease)"
-    article_ids = search_pubmed(query, 1000000)
-    
+    article_ids = search_pubmed(query, 20)
+    print(f"Found {len(article_ids)} articles matching the query.")
     articles = []
     for pubmed_id in article_ids:
         try:
@@ -74,8 +83,8 @@ def main():
             print(f"Error fetching article {pubmed_id}: {e}")
     
     # Save the collected articles
-    save_articles(articles, "data/raw/pubmed_articles.json")
-    print(f"Saved {len(articles)} articles to data/raw/pubmed_articles.json")
+    save_articles(articles, "data/raw/pmc_articles.json")
+    print(f"Saved {len(articles)} articles to data/raw/pmc_articles.json")
 
 if __name__ == "__main__":
     main()
