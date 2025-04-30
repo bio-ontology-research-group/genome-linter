@@ -60,7 +60,7 @@ def save_articles(articles: List[Dict], filename: str):
 def main():
     # Search for articles about genetic variants and rare diseases
     query = "(genetic variant) AND (rare disease)"
-    article_ids = search_pubmed(query, 1000000)
+    article_ids = search_pubmed(query, 10000)
     
     articles = []
     for pubmed_id in article_ids:
