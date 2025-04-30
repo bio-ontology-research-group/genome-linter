@@ -10,7 +10,7 @@ class ArticleRetriever:
         self.index = faiss.read_index(index_path)
         with open(metadata_path, 'r') as f:
             self.metadata = json.load(f)
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.model = SentenceTransformer('all-mpnet-base-v2')
         
     def retrieve(self, query: str, k: int = 5) -> List[Dict]:
         """Retrieve top k most relevant articles for the query"""

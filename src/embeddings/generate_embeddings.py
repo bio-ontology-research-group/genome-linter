@@ -6,11 +6,11 @@ from typing import List, Dict
 import os
 
 class VectorStore:
-    def __init__(self, embedding_dim: int = 384):
+    def __init__(self, embedding_dim: int = 768): # Updated dimension for all-mpnet-base-v2
         self.embedding_dim = embedding_dim
-        self.index = faiss.IndexFlatL2(embedding_dim)
+        self.index = faiss.IndexFlatL2(embedding_dim) # Use updated dimension
         self.metadata = []
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.model = SentenceTransformer('all-mpnet-base-v2') # Updated model
         
     def add_documents(self, documents: List[Dict]):
         """Add documents to the vector store"""

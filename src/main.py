@@ -1,6 +1,7 @@
 from retrieval.retriever import ArticleRetriever
-from generation.generator import AnswerGenerator
+from generation.generator import AnswerGenerator, OpenRouterGenerator
 import argparse
+import os
 
 def main():
     # Initialize components
@@ -8,13 +9,22 @@ def main():
         index_path="data/processed/vector_store.index",
         metadata_path="data/processed/vector_metadata.json"
     )
-    generator = AnswerGenerator()
     
     # Set up command line interface
     parser = argparse.ArgumentParser(description="PubMed RAG System for Genetic Variants and Rare Diseases")
     parser.add_argument("query", help="Your question about genetic variants and rare diseases")
     parser.add_argument("--top_k", type=int, default=3, help="Number of articles to retrieve (default: 3)")
+    parser.add_argument("--use_openrouter", action="store_true", help="Use OpenRouter instead of local model")
+    parser.add_argument("--openrouter_model", type=str, default="deepseek/deepseek-chat-v3-0324:free",
+                       help="OpenRouter model to use (default: deepseek/deepseek-chat-v3-0324:free)")
     args = parser.parse_args()
+    
+    # Initialize appropriate generator
+    if args.use_openrouter:
+        generator = OpenRouterGenerator(model=args.openrouter_model)
+    else:
+        generator = AnswerGenerator()
+    
     
     # Retrieve relevant articles
     print(f"\nSearching for articles related to: {args.query}")
