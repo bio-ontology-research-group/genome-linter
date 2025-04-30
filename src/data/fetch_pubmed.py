@@ -53,7 +53,6 @@ def fetch_article_details(pubmed_id: str) -> Dict:
         for author in article.findall(".//contrib[@contrib-type='author']")
         if author.find(".//surname") is not None and author.find(".//given-names") is not None
     ]
-    print(full_text)
     return {
         "pmcid": pubmed_id,
         "title": title,
@@ -69,15 +68,15 @@ def save_articles(articles: List[Dict], filename: str):
 def main():
     # Search for articles about genetic variants and rare diseases
     query = "(genetic variant) AND (rare disease)"
-    article_ids = search_pubmed(query, 20)
+    article_ids = search_pubmed(query, 210000)
     print(f"Found {len(article_ids)} articles matching the query.")
     articles = []
-    for pubmed_id in article_ids:
+    for i, pubmed_id in enumerate(article_ids):
         try:
             article = fetch_article_details(pubmed_id)
             if article:
                 articles.append(article)
-                print(f"Fetched article: {article['title']}")
+                print(f"Fetched article: {i + 1}/{len(article_ids)} {article['title']}")
                 time.sleep(0.1)  # Be polite to PubMed servers
         except Exception as e:
             print(f"Error fetching article {pubmed_id}: {e}")
