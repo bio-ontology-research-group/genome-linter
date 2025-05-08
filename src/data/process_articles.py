@@ -42,18 +42,18 @@ def process_articles(input_file: str, output_file: str):
     
     processed = []
     for article in articles:
-        # Clean and chunk the abstract
-        abstract = clean_text(article.get('abstract', ''))
-        chunks = chunk_text(abstract)
+        # Clean and chunk the full text
+        full_text = clean_text(article.get('full_text', ''))
+        chunks = chunk_text(full_text)
         
         for i, chunk in enumerate(chunks):
             processed.append({
-                "pubmed_id": article["pubmed_id"],
+                "pmcid": article["pmcid"],
                 "title": article["title"],
                 "chunk_id": i,
                 "text": chunk,
                 "authors": article["authors"],
-                "source": "pubmed"
+                "source": "pmc"
             })
     
     # Save processed articles
@@ -64,6 +64,6 @@ def process_articles(input_file: str, output_file: str):
 
 if __name__ == "__main__":
     process_articles(
-        input_file="data/raw/pubmed_articles.json",
+        input_file="data/raw/pmc_articles.json",
         output_file="data/processed/articles_chunks.json"
     )

@@ -6,11 +6,12 @@ from typing import List, Dict
 import os
 
 class VectorStore:
-    def __init__(self, embedding_dim: int = 768): # Updated dimension for all-mpnet-base-v2
+    def __init__(self, embedding_dim: int = 768):
         self.embedding_dim = embedding_dim
-        self.index = faiss.IndexFlatL2(embedding_dim) # Use updated dimension
+        self.index = faiss.IndexFlatL2(embedding_dim)
         self.metadata = []
-        self.model = SentenceTransformer('all-mpnet-base-v2') # Updated model
+        self.model = SentenceTransformer('microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract')
+        self.model.max_seq_length = 512  # Optimize for biomedical abstracts
         
     def add_documents(self, documents: List[Dict]):
         """Add documents to the vector store"""
@@ -46,8 +47,8 @@ def generate_embeddings(input_file: str, index_path: str, metadata_path: str):
     # Initialize vector store
     vector_store = VectorStore()
     
-    # Add documents in batches
-    batch_size = 32
+    # Add documents in batches with scientific text optimization
+    batch_size = 16  # Reduced for GPU memory with larger model
     for i in range(0, len(processed_articles), batch_size):
         batch = processed_articles[i:i + batch_size]
         vector_store.add_documents(batch)

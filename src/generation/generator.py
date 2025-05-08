@@ -1,6 +1,4 @@
 from typing import List, Dict, Optional
-from transformers import pipeline
-import torch
 import requests
 import os
 
@@ -18,17 +16,18 @@ class OpenRouterGenerator:
         for article in articles:
             context += f"Title: {article['title']}\n"
             context += f"Authors: {', '.join(article['authors'])}\n"
-            context += f"Abstract: {article['text'][:500]}...\n\n"
+            context += f"Abstract: {article['text']}\n\n"
         return context.strip()
     
-    def generate_answer(self, query: str, context: str) -> str:
+    def generate_answer(self, genes: str, phenotypes: str, context: str) -> str:
         """Generate answer using OpenRouter API"""
         prompt = f"""You are a clinical geneticist analyzing research about genetic variants and rare diseases.
 Based on these scientific articles:
 
 {context}
 
-Question: {query}
+Question: Which of the following genes with high impact variants are relevant for {phenotypes}, rank them and interpret the evidence:
+{genes}
 Answer:"""
         
         response = requests.post(
@@ -47,46 +46,6 @@ Answer:"""
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
 
-class AnswerGenerator:
-    def __init__(self, model_name: str = "facebook/bart-large-mnli"):
-        """Initialize the answer generator with a smaller language model"""
-        self.generator = pipeline(
-            "text-generation",
-            model=model_name,
-            device=0 if torch.cuda.is_available() else -1,
-            torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
-        )
-        
-    def format_context(self, articles: List[Dict]) -> str:
-        """Format retrieved articles as context for the generator"""
-        context = ""
-        for article in articles:
-            context += f"Title: {article['title']}\n"
-            context += f"Authors: {', '.join(article['authors'])}\n"
-            context += f"Abstract: {article['text'][:500]}...\n\n"  # Truncate long abstracts
-        return context.strip()
-    
-    def generate_answer(self, query: str, context: str) -> str:
-        """Generate an answer to the query based on the provided context"""
-        prompt = f"""Based on the following scientific articles, answer the question:
-
-{context}
-
-Question: {query}
-Answer:"""
-        
-        # Generate the answer with more conservative settings
-        result = self.generator(
-            prompt,
-            max_new_tokens=200,  # Use max_new_tokens instead of max_length
-            num_return_sequences=1,
-            temperature=0.5,
-            do_sample=True,
-            truncation=True,
-            pad_token_id=self.generator.tokenizer.eos_token_id
-        )
-        
-        return result[0]['generated_text'].split("Answer:")[-1].strip()
 
 def test_generation():
     """Test the generation system with sample queries"""
@@ -99,21 +58,18 @@ def test_generation():
     ]
     
     # Test local generator
-    print("Testing local generator...")
-    local_generator = AnswerGenerator()
-    context = local_generator.format_context(test_articles)
-    test_query = "What is the significance of BRCA1 variants in breast cancer?"
-    answer = local_generator.generate_answer(test_query, context)
-    print(f"Question: {test_query}")
-    print(f"Answer: {answer}\n")
-    
+    test_genes = "BRCA1, TP53"
+    test_phenotypes = "breast cancer"
     # Test OpenRouter generator if API key available
     if os.getenv("OPENROUTER_API_KEY"):
         print("Testing OpenRouter generator...")
         openrouter_generator = OpenRouterGenerator()
-        answer = openrouter_generator.generate_answer(test_query, context)
-        print(f"Question: {test_query}")
+        context = openrouter_generator.format_context(test_articles)
+        answer = openrouter_generator.generate_answer(test_genes, test_phenotypes, context)
+        print(f"Genes: {test_genes}, Phenotype: {test_phenotypes}")
         print(f"Answer: {answer}")
+    else:
+        print("OpenRouter API key not set, skipping OpenRouter generator test.")
 
 if __name__ == "__main__":
     test_generation()

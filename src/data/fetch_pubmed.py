@@ -12,7 +12,8 @@ def search_pubmed(query: str, max_results: int = 100) -> List[str]:
         "db": "pmc",
         "term": query,
         "retmax": max_results,
-        "retmode": "json"
+        "retmode": "json",
+        "sort": "relevance",
     }
     
     response = requests.get(base_url, params=params)
@@ -25,12 +26,13 @@ def fetch_article_details(pubmed_id: str) -> Dict:
     """Fetch detailed information for a single PubMed article"""
     base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
     params = {
-        "db": "pmc",
+        "db": "pubmed",
         "id": pubmed_id,
-        "retmode": "xml"
+        "retmode": "json"
     }
     
     response = requests.get(base_url, params=params)
+    response.raise_for_status()
     response.raise_for_status()
     
     # Parse PMC XML
@@ -67,8 +69,8 @@ def save_articles(articles: List[Dict], filename: str):
 
 def main():
     # Search for articles about genetic variants and rare diseases
-    query = "(genetic variant) AND (rare disease)"
-    article_ids = search_pubmed(query, 210000)
+    query = "genetic disease OR rare disease OR genetic variant OR mutation"
+    article_ids = search_pubmed(query, 1000000)
     print(f"Found {len(article_ids)} articles matching the query.")
     articles = []
     for i, pubmed_id in enumerate(article_ids):
@@ -77,7 +79,7 @@ def main():
             if article:
                 articles.append(article)
                 print(f"Fetched article: {i + 1}/{len(article_ids)} {article['title']}")
-                time.sleep(0.1)  # Be polite to PubMed servers
+                time.sleep(0.01)  # Be polite to PubMed servers
         except Exception as e:
             print(f"Error fetching article {pubmed_id}: {e}")
     
