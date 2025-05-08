@@ -26,7 +26,7 @@ Based on these scientific articles:
 
 {context}
 
-Question: Which of the following genes with high impact variants are relevant for {phenotypes}, rank them and interpret the evidence:
+Question: Which of the following genes with high impact variants are directly or indirectly relevant for {phenotypes}, rank them and interpret the evidence. Just answer the question.:
 {genes}
 Answer:"""
         
