@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional
 import requests
 import os
+import json
 
 class OpenRouterGenerator:
     def __init__(self, model: str = "deepseek/deepseek-chat-v3-0324:free", api_key: Optional[str] = None):
@@ -34,17 +35,29 @@ Answer:"""
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-Return-Billing": "true",
+                "HTTP-Referer": "http://borg.kaust.edu.sa",  # Required by some OpenRouter models
+                "X-Title": "Genome Linter"  # Optional app identifier
             },
             json={
                 "model": self.model,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.3,
-                "max_tokens": 1000
+                "max_tokens": 100000
             }
         )
         response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
+        response_data = response.json()
+        gen_id = response_data.get("id", None)
+        url = f"https://openrouter.ai/api/v1/generation?id={gen_id}"
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        stats = response.json()
+        cost = stats["data"].get("total_cost", 0)
+        print(f"OpenRouter request cost: ${cost:.4f}")
+        return response_data["choices"][0]["message"]["content"]
 
 
 def test_generation():

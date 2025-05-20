@@ -3,7 +3,8 @@ import numpy as np
 import requests
 import xml.etree.ElementTree as ET
 import time
-
+import json
+import os
 class ArticleRetriever:
     def __init__(self):
         """Initialize the retriever with PubMed API integration"""
@@ -57,23 +58,30 @@ class ArticleRetriever:
             "authors": authors
         }
 
-    def retrieve(self, query: str, k: int = 5) -> List[Dict]:
+    def retrieve(self, gene: str, k: int = 5) -> List[Dict]:
         """Retrieve top k most relevant articles from PubMed"""
+        # Check if the gene articles have already been retrieved
+        if os.path.exists(f"data/genes/{gene}.json"):
+            print(f"Skipping {gene} (already retrieved)")
+            with open(f"data/genes/{gene}.json", "r") as f:
+                return json.load(f)
         # Search PubMed and fetch articles
-        article_ids = self.search_pubmed(query, k)
+        article_ids = self.search_pubmed(gene, k)
         # Introduce a delay to avoid hitting the API too quickly
-        time.sleep(0.5)                
+        time.sleep(0.1)                
         articles = []
         for pubmed_id in article_ids:
             try:
                 article = self.fetch_article_details(pubmed_id)
                 # Introduce a delay to avoid hitting the API too quickly
-                time.sleep(0.5)                
+                time.sleep(0.1)                
                 if article:
                     articles.append(article)
             except Exception as e:
                 print(f"Error fetching article {pubmed_id}: {e}")
-
+        # Save articles to a file
+        with open(f"data/genes/{gene}.json", "w") as f:
+            json.dump(articles, f, indent=4)
         return  articles
 
     def expand_query(self, gene: str) -> str:
@@ -96,5 +104,27 @@ def test_retrieval():
         for i, result in enumerate(results):
             print(f"{i+1}. {result['title']} ")
 
+def retrieve_for_all_genes():
+    """Retrieve articles for a list of genes"""
+    retriever = ArticleRetriever()
+    
+    # with open("data/genes.list", "r") as f:
+    #     genes = [line.strip() for line in f.readlines()]
+    genes = ['C5orf42',]
+    for i, gene in enumerate(genes):
+        try:
+            if os.path.exists(f"data/genes/{gene}.json"):
+                print(f"Skipping {gene} (already retrieved)")
+                continue
+            print(f"Retrieving articles for {gene} ({i + 1} / {len(genes)})...")
+            articles = retriever.retrieve(gene)
+            # Save articles to a file
+            with open(f"data/genes/{gene}.json", "w") as f:
+                json.dump(articles, f, indent=4)
+        except Exception as e:
+            print(f"Error retrieving articles for {gene}: {e}")
+            time.sleep(0.5)
+
 if __name__ == "__main__":
-    test_retrieval()
+    #test_retrieval()
+    retrieve_for_all_genes()

@@ -12,7 +12,7 @@ def main():
     parser = argparse.ArgumentParser(description="VCF Analysis and Interpretation System for Genetic Variants")
     # Input options
     parser.add_argument("vcf", nargs='?', help="Input VCF file annotated with VEP (optional)")
-    parser.add_argument("--ranked_genes", help="File containing prioritized list of genes (one per line)")
+    parser.add_argument("--genes", help="File containing list of genes (one per line)")
     parser.add_argument("--phenotypes", help="Phenotypes associated with the variants (comma-separated)")
     parser.add_argument("-o", "--output", help="Output report file", default="variant_report.md")
     parser.add_argument("--top_k", type=int, default=5, help="Total number of articles to retrieve (default: 3)")
@@ -40,10 +40,10 @@ def main():
             high_impact_genes.update(vcf_genes)
         else:
             print("Note: No high-impact variants found in VCF")
-    elif args.ranked_genes:
+    elif args.genes:
         ranked_genes = []
-        print(args.ranked_genes)
-        with open(args.ranked_genes, 'r') as f:
+        print(args.genes)
+        with open(args.genes, 'r') as f:
             ranked_genes = [line.strip() for line in f if line.strip()]
         # Create ordered dict preserving ranked order
         # Add ranked genes first
