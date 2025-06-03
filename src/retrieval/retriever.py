@@ -58,7 +58,7 @@ class ArticleRetriever:
             "authors": authors
         }
 
-    def retrieve(self, gene: str, k: int = 5) -> List[Dict]:
+    def retrieve_gene(self, gene: str, k: int = 5) -> List[Dict]:
         """Retrieve top k most relevant articles from PubMed"""
         # Check if the gene articles have already been retrieved
         if os.path.exists(f"data/genes/{gene}.json"):
@@ -84,10 +84,35 @@ class ArticleRetriever:
             json.dump(articles, f, indent=4)
         return  articles
 
-    def expand_query(self, gene: str) -> str:
-        """Expand query with PubMed search syntax"""
-        expansion = f'("{gene} protein, human"[Supplementary Concept] OR "{gene} protein, human"[All Fields] OR "{gene}"[All Fields] OR "genes, {gene}"[MeSH Terms] OR ("genes"[All Fields] AND "{gene}"[All Fields]) OR "{gene} genes"[All Fields]) AND variants[All Fields] AND ("disease"[MeSH Terms] OR "disease"[All Fields] OR "diseases"[All Fields])'
-        return expansion
+    def retrieve_pheno(self, pheno: str, k: int = 5) -> List[Dict]:
+        """Retrieve top k most relevant articles from PubMed"""
+        pheno_file = pheno.strip().lower().replace(" ", "_")
+        # Check if the gene articles have already been retrieved
+        if os.path.exists(f"data/phenotypes/{pheno_file}.json"):
+            print(f"Skipping {pheno} (already retrieved)")
+            with open(f"data/phenotypes/{pheno_file}.json", "r") as f:
+                return json.load(f)
+        # Search PubMed and fetch articles
+        pheno_query = f"{pheno} AND (gene OR genetic OR mutation OR variant OR locus OR polymorphism OR SNP OR CNV OR deletion OR duplication OR translocation OR rearrangement OR fusion OR alteration OR aberration)"
+        print(f"Retrieving articles for {pheno_file}")
+        article_ids = self.search_pubmed(pheno_query, k)
+        # Introduce a delay to avoid hitting the API too quickly
+        time.sleep(0.1)                
+        articles = []
+        for pubmed_id in article_ids:
+            try:
+                article = self.fetch_article_details(pubmed_id)
+                # Introduce a delay to avoid hitting the API too quickly
+                time.sleep(0.1)                
+                if article:
+                    articles.append(article)
+            except Exception as e:
+                print(f"Error fetching article {pubmed_id}: {e}")
+        # Save articles to a file
+        with open(f"data/phenotypes/{pheno_file}.json", "w") as f:
+            json.dump(articles, f, indent=4)
+        return  articles
+
 
 def test_retrieval():
     """Test the PubMed retrieval system with sample queries"""

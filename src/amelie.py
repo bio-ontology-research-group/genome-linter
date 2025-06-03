@@ -2,20 +2,29 @@
 
 import json
 import requests
-
+import pandas as pd
+import time
 
 url = 'https://amelie.stanford.edu/api/gene_list_api/'
 
 
 def main():
-    response = requests.post(
-        url,
-        verify=False,
-        data={'patientName': 'Example patient',
-              'phenotypes': ','.join(['HP:0001332', 'HP:0100275']),
-              'genes': 'PLIN4,MYH14,TUBB1,FGF5,WDR17,ASS1,VEZF1,LRFN4,DNAI1,NAA60,' +               'CNTN5,GIMAP2,SLC25A47,USP30,KMT2A,PRKRA,FADS6,WRNIP1,UGDH,' +               'NACA,PRX,FANCD2,KRTAP5-8,SNX1,PHKG1,THNSL1,CHRNE,DGKZ,CMYA5,' +               'EPHA6,VNN2,CTRB2,CAPN10,EMILIN1,OLIG3,CACNA1B,CYP4B1,HTR1D,' +               'SLC7A2,CMPK1,RBMXL3,DSG2,CCDC184,PM20D2,C2orf78,ACCSL,CHRD,' +               'MROH2B,ANO8,NOC4L,WDR4,FAM8A1,SLC1A5,SYNE1,SERAC1,VCX,SSC5D,' +               'APOB,TRABD,CAMTA2,HMGCS2,DSPP,LRBA,GP1BA'})
-    print(json.dumps(response.json(), indent=4))
 
+    df = pd.read_pickle('data/processed_amelie.pkl')
+    with open('data/amelie_report.json') as f:
+        results = json.loads(f.read())
+    for i, row in df.iterrows():
+        try:
+            #print(f"Obtaining results for row {i+1} - {row['Patient Name']}")
+            response = results[i]
+            cause_gene = row['Causative gene']
+            for rank, item in enumerate(response):
+                if cause_gene == item[0]:
+                    print(f"{row['Patient Name']}\t{cause_gene}\t{rank + 1}")
+                    break
+        except Exception as e:
+            print(f"Error generating interpretation for row {i}: {e}")
+    
 
 if __name__ == "__main__":
     main()

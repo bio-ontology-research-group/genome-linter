@@ -9,24 +9,47 @@ def cleanhtml(raw_html):
   cleantext = re.sub(CLEANR, '', raw_html)
   return cleantext
 
-def genes_articles(genes: list) -> str:
+def genes_articles(genes: str) -> str:
     """Retrieve articles related to a specific gene and format the context for the model
     Args:
-        genes (list): List of gene symbols to search for.
+        genes (str): List of gene symbols to search for, comma separated.
     Returns:
         str: Formatted context string containing article titles, authors, and abstracts.
     """
     retriever = ArticleRetriever()
+    genes = [gene.strip() for gene in genes.split(',')]
     context = ""
     for gene in genes:
-        articles = retriever.retrieve(gene)
+        articles = retriever.retrieve_gene(gene)
         for article in articles:
-            context += f"Title: {article['title']}\n"
-            context += f"Authors: {', '.join(article['authors'])}\n"
-            context += f"Abstract: {article['text']}\n\n"
+            if 'text' in article and article['text']:
+                context += f"Title: {article['title']}\n"
+                context += f"Authors: {', '.join(article['authors'])}\n"
+                context += f"Abstract: {article['text']}\n\n"
     return context.strip()
 
 genes_articles_tool = FunctionTool(genes_articles)
+
+def phenotypes_articles(phenotypes: str) -> str:
+    """Retrieve articles related to a phenotype and format the context for the model
+    Args:
+        phenotypes (str): List of phenotypes to search for, comma separated.
+    Returns:
+        str: Formatted context string containing article titles, authors, and abstracts.
+    """
+    retriever = ArticleRetriever()
+    phenotypes = [pheno.strip() for pheno in phenotypes.split(',')]
+    context = ""
+    for pheno in phenotypes:
+        articles = retriever.retrieve_pheno(pheno)
+        for article in articles:
+            if 'text' in article and article['text']:
+                context += f"Title: {article['title']}\n"
+                context += f"Authors: {', '.join(article['authors'])}\n"
+                context += f"Abstract: {article['text']}\n\n"
+    return context.strip()
+
+phenotypes_articles_tool = FunctionTool(phenotypes_articles)
 
 
 def aberowl_hpo(phenotype: str) -> str:
