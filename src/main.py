@@ -4,9 +4,6 @@ import argparse
 import os
 
 def main():
-    # Initialize components
-    retriever = ArticleRetriever()
-    
     # Set up command line interface
     parser = argparse.ArgumentParser(description="VCF Analysis and Interpretation System for Genetic Variants")
     # Input options
