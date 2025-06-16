@@ -58,7 +58,7 @@ class ArticleRetriever:
             "authors": authors
         }
 
-    def retrieve_gene(self, gene: str, k: int = 5) -> List[Dict]:
+    def retrieve_gene(self, gene: str, k: int = 5, cache: bool = True) -> List[Dict]:
         """Retrieve top k most relevant articles from PubMed"""
         # Check if the gene articles have already been retrieved
         if os.path.exists(f"data/genes/{gene}.json"):
@@ -80,11 +80,12 @@ class ArticleRetriever:
             except Exception as e:
                 print(f"Error fetching article {pubmed_id}: {e}")
         # Save articles to a file
-        with open(f"data/genes/{gene}.json", "w") as f:
-            json.dump(articles, f, indent=4)
+        if cache and os.path.exists("data/genes"):
+            with open(f"data/genes/{gene}.json", "w") as f:
+                json.dump(articles, f, indent=4)
         return  articles
 
-    def retrieve_pheno(self, pheno: str, k: int = 5) -> List[Dict]:
+    def retrieve_pheno(self, pheno: str, k: int = 5, cache: bool = True) -> List[Dict]:
         """Retrieve top k most relevant articles from PubMed"""
         pheno_file = pheno.strip().lower().replace(" ", "_")
         # Check if the gene articles have already been retrieved
@@ -109,8 +110,9 @@ class ArticleRetriever:
             except Exception as e:
                 print(f"Error fetching article {pubmed_id}: {e}")
         # Save articles to a file
-        with open(f"data/phenotypes/{pheno_file}.json", "w") as f:
-            json.dump(articles, f, indent=4)
+        if cache and os.path.exists("data/phenotypes"):
+            with open(f"data/phenotypes/{pheno_file}.json", "w") as f:
+                json.dump(articles, f, indent=4)
         return  articles
 
 

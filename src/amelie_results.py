@@ -51,6 +51,15 @@ def parse_ranks_from_report(report_path):
             # Pattern for "Rank: X\nGene: CAUSATIVE_GENE"
             rf"Rank:\s*(\d+)[^\n]*\n[^\n]*Gene:\s*{re.escape(causative_gene)}",
             
+            # Pattern for "Rank: X\nGene: **CAUSATIVE_GENE**"
+            rf"Rank:\s*(\d+)\s*\nGene:\s*\*\*{re.escape(causative_gene)}\*\*",
+
+            # Pattern for "**Rank: X**\nGene: **CAUSATIVE_GENE**"
+            rf"\*\*Rank:\s*(\d+)\*\*\s*\nGene:\s*\*\*{re.escape(causative_gene)}\*\*",
+
+            # Pattern for "**Rank: X**\nGene: **CAUSATIVE_GENE**"
+            rf"\*\*Rank:\s*(\d+)\*\*\s*\nGene:\s*\*\*{re.escape(causative_gene)}\s*\(([^)]+)\)\*\*",
+
             # Pattern for "Gene: CAUSATIVE_GENE\nRank: X" 
             rf"Gene:\s*{re.escape(causative_gene)}[^\n]*\n[^\n]*Rank:\s*(\d+)",
             
@@ -72,7 +81,10 @@ def parse_ranks_from_report(report_path):
             if match:
                 rank = int(match.group(1))
                 break
-                
+    
+        if rank is None:
+            print(f"Warning: Rank for {causative_gene} not found in patient {patient_name}.")
+
         results[patient_name] = (causative_gene, rank)
     
     return results
