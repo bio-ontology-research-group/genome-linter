@@ -4,7 +4,7 @@ from camel.agents import ChatAgent
 from tools import genes_articles_tool, aberowl_hpo_tool, phenotypes_articles_tool
 from tools import aberowl_hpo, genes_articles, phenotypes_articles
 
-def generate_interpretation(genes: str, phenotypes: str, model_type="deepseek/deepseek-r1:free") -> str:
+def generate_interpretation(genes: str, phenotypes: str, model_type="deepseek/deepseek-chat-v3-0324:free") -> str:
     model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENROUTER,
     model_type=model_type,
@@ -18,41 +18,41 @@ def generate_interpretation(genes: str, phenotypes: str, model_type="deepseek/de
         "genetic variants and rare diseases. Based on the articles tool and background knowledge of phenotypes",
         model=model)
 
-    # genes_agent = ChatAgent(
-    #     system_message="You are a helpful assistant that retrieves articles related to genes.",
-    #     # tools=[genes_articles_tool,],
-    #     model=model)
+    genes_agent = ChatAgent(
+        system_message="You are a helpful assistant that retrieves articles related to genes.",
+        tools=[genes_articles_tool,],
+        model=model)
 
-    # aberowl_pheno_agent = ChatAgent(
-    #     system_message="You are a helpful assistant that retrieves articles and background knowledge related to phenotypes.",
-    #     # tools=[aberowl_hpo_tool,],
-    #     model=model)
+    aberowl_pheno_agent = ChatAgent(
+        system_message="You are a helpful assistant that retrieves articles and background knowledge related to phenotypes.",
+        tools=[aberowl_hpo_tool,],
+        model=model)
 
-    # pubmed_pheno_agent = ChatAgent(
-    #     system_message="You are a helpful assistant that retrieves articles to phenotypes.",
-    #     # tools=[phenotypes_articles_tool,],
-    #     model=model)
+    pubmed_pheno_agent = ChatAgent(
+        system_message="You are a helpful assistant that retrieves articles to phenotypes.",
+        tools=[phenotypes_articles_tool,],
+        model=model)
 
-#     response = pubmed_pheno_agent.step(
-#         f"""Retrieve articles about the following phenotypes: {phenotypes}.
-# Generate a context for the model for each phenotype based on articles or your knowledge.""")
-#     phenotypes_articles = response.msgs[0].content
-    phenotype_articles = ""
-    background_knowledge = ""
-    for pheno in phenotypes.split(','):
-        background_knowledge += aberowl_hpo(pheno.strip())
-    pheno_articles = phenotypes_articles(phenotypes)
-#     response = aberowl_pheno_agent.step(
-#         f"""Retrieve background knowledge about the following phenotypes: {phenotypes}.
-# Generate a context for the model for each phenotype based on AberOWL or your knowledge.""")
-#     phenotypes = response.msgs[0].content
-#     print(phenotypes)
-#     response = genes_agent.step(
-#         f"""Retrieve articles related to the following genes: {genes}.
-# Generate a context for the model for each gene based on the articles or your knowledge.""")
-#     articles = response.msgs[0].content
-#     print(articles)
-    articles = genes_articles(genes)
+    response = pubmed_pheno_agent.step(
+        f"""Retrieve articles about the following phenotypes: {phenotypes}.
+Generate a context for the model for each phenotype based on articles or your knowledge.""")
+    pheno_articles = response.msgs[0].content
+    response = aberowl_pheno_agent.step(
+        f"""Retrieve background knowledge about the following phenotypes: {phenotypes}.
+Generate a context for the model for each phenotype based on AberOWL or your knowledge.""")
+    background_knowledge = response.msgs[0].content
+    response = genes_agent.step(
+        f"""Retrieve articles related to the following genes: {genes}.
+Generate a context for the model for each gene based on the articles or your knowledge.""")
+    articles = response.msgs[0].content
+
+    # Uncomment for the models that do not support tools
+    # background_knowledge = ""
+    # for pheno in phenotypes.split(','):
+    #     background_knowledge += aberowl_hpo(pheno.strip())
+    # pheno_articles = phenotypes_articles(phenotypes)
+    # articles = genes_articles(genes)
+
     response = gl_agent.step(
         f"""Genes context:\n {articles} \n\n
 Phenotype articles context:\n{pheno_articles} \n\n

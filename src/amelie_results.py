@@ -132,7 +132,7 @@ if __name__ == "__main__":
         if rank is None:
             not_found.append(str(i))
         i += 1
-        print(f"{patient}: {gene} - Rank: {rank_str}")
+        print(f"{patient}\t{gene}\t{rank_str}")
     
     print(", ".join(not_found))
     
